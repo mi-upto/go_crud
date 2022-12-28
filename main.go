@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"go_crud/model"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -11,13 +13,21 @@ import (
 
 func main() {
 	db := sqlConnect()
+	db.AutoMigrate(&model.User{}) // 構造を DBに反映
 	defer db.Close()
 
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*.html")
 
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.HTML(200, "index.html", gin.H{})
+		db := sqlConnect()
+		var users []model.User
+		db.Order("created_at asc").Find(&users)
+		defer db.Close()
+
+		ctx.HTML(200, "index.html", gin.H{
+			"users": users,
+		})
 	})
 
 	router.Run()
