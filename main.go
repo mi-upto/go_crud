@@ -1,95 +1,33 @@
 package main
 
 import (
-	"fmt"
-	"strconv"
-	"time"
-
+	"go_crud/controller"
+	"go_crud/middleware"
 	"go_crud/model"
+	"go_crud/service"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
 )
 
 func main() {
-	db := sqlConnect()
+	db := service.SqlConnect()
 	db.AutoMigrate(&model.User{}) // 構造を DBに反映
-	defer db.Close()
 
-	router := gin.Default()
-	router.LoadHTMLGlob("templates/*.html")
-
-	// controller
-	router.GET("/", func(ctx *gin.Context) {
-		db := sqlConnect()
-		var users []model.User
-		db.Order("created_at asc").Find(&users)
-		defer db.Close()
-
-		ctx.HTML(200, "index.html", gin.H{
-			"users": users,
-		})
-	})
-
-	router.POST("/new", func(ctx *gin.Context) {
-		db := sqlConnect()
-		name := ctx.PostForm("name")
-		email := ctx.PostForm("email")
-		fmt.Println("create user " + name + " with email " + email)
-		db.Create(&model.User{Name: name, Email: email})
-		defer db.Close()
-
-		ctx.Redirect(302, "/")
-	})
-
-	router.POST("/delete/:id", func(ctx *gin.Context) {
-		db := sqlConnect()
-		n := ctx.Param("id")
-		id, err := strconv.Atoi(n)
-		if err != nil {
-			panic("id is not a number")
-		}
-		var user model.User
-		db.First(&user, id)
-		db.Delete(&user)
-		defer db.Close()
-
-		ctx.Redirect(302, "/")
-	})
-
-	router.Run()
-}
-
-func sqlConnect() (database *gorm.DB) {
-	DBMS := "mysql"
-	USER := "go_test"
-	PASS := "password"
-	PROTOCOL := "tcp(db:3306)"
-	DBNAME := "go_database"
-
-	CONNECT := USER + ":" + PASS + "@" + PROTOCOL + "/" + DBNAME + "?charset=utf8&parseTime=true&loc=Asia%2FTokyo"
-
-	count := 0
-	db, err := gorm.Open(DBMS, CONNECT)
-	if err != nil {
-		for {
-			if err == nil {
-				fmt.Println("")
-				break
-			}
-			fmt.Print(".")
-			time.Sleep(time.Second)
-			count++
-			if count > 180 {
-				fmt.Println("")
-				fmt.Println("DB接続失敗")
-				panic(err)
-			}
-			db, err = gorm.Open(DBMS, CONNECT)
+	engine := gin.Default()
+	engine.Use(middleware.RecordUaAndTime)
+	userEngine := engine.Group("/user")
+	{
+		v1 := userEngine.Group("/v1")
+		{
+			v1.POST("/add", controller.UserAdd)
+			v1.GET("/list", controller.UserList)
+			v1.PUT("/update/:id", controller.UserUpdate)
+			v1.DELETE("/delete/:id", controller.UserDelete)
 		}
 	}
-	fmt.Println("DB接続成功")
 
-	return db
+	engine.Run()
+
+	defer db.Close()
 }
