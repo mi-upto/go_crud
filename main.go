@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"go_crud/model"
@@ -19,6 +20,7 @@ func main() {
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*.html")
 
+	// controller
 	router.GET("/", func(ctx *gin.Context) {
 		db := sqlConnect()
 		var users []model.User
@@ -28,6 +30,32 @@ func main() {
 		ctx.HTML(200, "index.html", gin.H{
 			"users": users,
 		})
+	})
+
+	router.POST("/new", func(ctx *gin.Context) {
+		db := sqlConnect()
+		name := ctx.PostForm("name")
+		email := ctx.PostForm("email")
+		fmt.Println("create user " + name + " with email " + email)
+		db.Create(&model.User{Name: name, Email: email})
+		defer db.Close()
+
+		ctx.Redirect(302, "/")
+	})
+
+	router.POST("/delete/:id", func(ctx *gin.Context) {
+		db := sqlConnect()
+		n := ctx.Param("id")
+		id, err := strconv.Atoi(n)
+		if err != nil {
+			panic("id is not a number")
+		}
+		var user model.User
+		db.First(&user, id)
+		db.Delete(&user)
+		defer db.Close()
+
+		ctx.Redirect(302, "/")
 	})
 
 	router.Run()

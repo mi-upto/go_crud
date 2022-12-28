@@ -17,11 +17,13 @@
   <h2>ユーザー一覧</h2>
   <table>
     <tr>
+      <td>ID</td>
       <td>名前</td>
       <td>メールアドレス</td>
     </tr>
     {{ range .users }}
     <tr>
+      <td>{{ .ID }}</td>
       <td>{{ .Name }}</td>
       <td>{{ .Email }}</td>
       <td>
@@ -31,7 +33,7 @@
       </td>
     </tr>
     {{ end }}
-    </ul>
+  </table>
 </body>
 
 </html>
