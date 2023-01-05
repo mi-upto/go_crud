@@ -37,24 +37,22 @@ func UserList(c *gin.Context) {
 	})
 }
 
-// 動いてるけど、よく分からん
 func UserUpdate(c *gin.Context) {
-	user := model.User{}
 	n := c.Param("id")
 	id, err := strconv.Atoi(n)
+	user := model.User{}
 
-	data := model.User{}
-	if err := c.BindJSON(&data); err != nil {
+	if err := c.BindJSON(&user); err != nil {
 		c.String(http.StatusBadRequest, "Request is failed: "+err.Error())
 	}
 
 	userService := service.UserService{}
-	err = userService.UpdateUser(int(id), &user, &data)
+	err = userService.UpdateUser(int(id), &user)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Server Error")
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
 	})
 }

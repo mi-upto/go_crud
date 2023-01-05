@@ -25,10 +25,10 @@ func (UserService) GetUserList() []model.User {
 	return users
 }
 
-// 動いてるけど、よく分からん
-func (UserService) UpdateUser(id int, newUser *model.User, data *model.User) error {
+func (UserService) UpdateUser(id int, newUser *model.User) error {
 	db := SqlConnect()
-	db.Where("ID = ?", id).First(newUser).Updates(data)
+	var user model.User
+	db.Where("ID = ?", id).First(&user).Updates(newUser)
 	defer db.Close()
 
 	return nil
